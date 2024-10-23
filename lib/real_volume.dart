@@ -15,6 +15,8 @@ class RealVolume {
   static const EventChannel _ringerModeEventChannel =
       EventChannel('real_volume_ringer_mode_change_event');
 
+  static Stream<VolumeObj>? _volumeStream;
+
   /// A listener that triggers a VolumeObj event when *volumeLevel*
   /// of any *streamType* has changed.
   ///
@@ -23,22 +25,24 @@ class RealVolume {
   ///      // do something
   ///  });
   /// ```
-  static Stream<VolumeObj> get onVolumeChanged =>
-      _volumeEventChannel.receiveBroadcastStream().map((event) {
-        final obj = jsonDecode(event);
-        double vol = 0.0;
-        if (obj['volumeLevel'] is int) {
-          vol = (obj['volumeLevel'] as int).toDouble();
-        } else {
-          vol = obj['volumeLevel'];
-        }
-        if (Platform.isAndroid) {
-          return VolumeObj(
-              streamType: StreamType.values[obj['streamType']],
-              volumeLevel: vol);
-        }
-        return VolumeObj(volumeLevel: vol);
-      });
+  static Stream<VolumeObj> get onVolumeChanged {
+    _volumeStream ??= _volumeEventChannel.receiveBroadcastStream().map((event) {
+      final obj = jsonDecode(event);
+      double vol = 0.0;
+      if (obj['volumeLevel'] is int) {
+        vol = (obj['volumeLevel'] as int).toDouble();
+      } else {
+        vol = obj['volumeLevel'];
+      }
+      if (Platform.isAndroid) {
+        return VolumeObj(
+            streamType: StreamType.values[obj['streamType']], volumeLevel: vol);
+      }
+      return VolumeObj(volumeLevel: vol);
+    });
+
+    return _volumeStream!;
+  }
 
   /// A listener that triggers a RingerMode event when device's
   /// ringer mode has changed.
